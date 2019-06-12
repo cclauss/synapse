@@ -181,6 +181,7 @@ class HomeServer(object):
         'groups_attestation_renewer',
         'secrets',
         'spam_checker',
+        'third_party_event_rules',
         'room_member_handler',
         'federation_registry',
         'server_notices_manager',
