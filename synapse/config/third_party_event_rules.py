@@ -27,8 +27,11 @@ class ThirdPartyRulesConfig(Config):
             self.third_party_event_rules = load_module(provider)
 
     def default_config(self, **kwargs):
-        # TODO: add documentation.
         return """\
+        # Server admins can define a Python module that implements extra rules for
+        # allowing or denying incoming events. In order to work, this module needs to
+        # override the methods defined in synapse/events/third_party_rules.py.
+        #
         #third_party_event_rules:
         #  module: "my_custom_project.SuperRulesSet"
         #  config:
