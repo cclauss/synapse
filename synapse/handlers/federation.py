@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2014-2016 OpenMarket Ltd
-# Copyright 2018 New Vector Ltd
+# Copyright 2017-2018 New Vector Ltd
+# Copyright 2019 The Matrix.org Foundation C.I.C.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,6 +34,7 @@ from synapse.api.constants import EventTypes, Membership, RejectedReason
 from synapse.api.errors import (
     AuthError,
     CodeMessageException,
+    Codes,
     FederationDeniedError,
     FederationError,
     RequestSendFailed,
@@ -126,6 +128,8 @@ class FederationHandler(BaseHandler):
         # When joining a room we need to queue any events for that room up
         self.room_queues = {}
         self._room_pdu_linearizer = Linearizer("fed_room_pdu")
+
+        self.third_party_event_rules = hs.get_third_party_event_rules()
 
     @defer.inlineCallbacks
     def on_receive_pdu(
@@ -1760,6 +1764,21 @@ class FederationHandler(BaseHandler):
             }
             if create_event:
                 auth_for_e[(EventTypes.Create, "")] = create_event
+
+            event_allowed = yield self.third_party_event_rules.check_event_allowed(
+                e, events_to_context[e.event_id],
+            )
+            if not event_allowed:
+                logger.warn(
+                    "Rejecting %s because the third party rules don't allow it",
+                    e.event_id,
+                )
+
+                if e == event:
+                    raise SynapseError(
+                        403, "This event is not allowed in this context", Codes.FORBIDDEN,
+                    )
+                events_to_context[e.event_id].rejected = RejectedReason.AUTH_ERROR
 
             try:
                 self.auth.check(room_version, e, auth_events=auth_for_e)
