@@ -46,4 +46,5 @@ class ThirdPartyEventRules(object):
         if self.third_party_rules is None:
             defer.returnValue(True)
 
-        return self.third_party_rules.check_event_allowed(event, context)
+        ret = yield self.third_party_rules.check_event_allowed(event, context)
+        defer.returnValue(ret)
